@@ -1,0 +1,1414 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TURGLEDER — Grind naturen</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;600&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --pine: #1a2e1a;
+    --forest: #2d4a2d;
+    --moss: #4a6741;
+    --lichen: #7a9e6f;
+    --frost: #c8dfc4;
+    --snow: #f0f5ee;
+    --amber: #e8a020;
+    --gold: #f5c842;
+    --ember: #d45e1a;
+    --granite: #8a9a8a;
+    --night: #0d1a0d;
+    --xp-blue: #4a9eff;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--pine);
+    color: var(--snow);
+    font-family: 'IBM Plex Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Noise texture overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0.4;
+  }
+
+  /* Background trees */
+  .bg-trees {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 200px;
+    background: linear-gradient(to top, var(--night) 0%, transparent 100%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header */
+  header {
+    text-align: center;
+    padding: 40px 0 20px;
+    position: relative;
+  }
+
+  .logo {
+    font-family: 'Bebas Neue', cursive;
+    font-size: clamp(52px, 12vw, 96px);
+    letter-spacing: 8px;
+    color: var(--snow);
+    text-shadow: 0 0 40px rgba(200, 223, 196, 0.2), 4px 4px 0 var(--night);
+    line-height: 1;
+  }
+
+  .logo span { color: var(--amber); }
+
+  .tagline {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    letter-spacing: 4px;
+    color: var(--granite);
+    text-transform: uppercase;
+    margin-top: 8px;
+  }
+
+  /* Profile bar */
+  .profile-bar {
+    background: var(--night);
+    border: 1px solid var(--forest);
+    border-radius: 4px;
+    padding: 16px 24px;
+    margin: 24px 0;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--forest);
+    border: 2px solid var(--amber);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  .avatar::after {
+    content: attr(data-level);
+    position: absolute;
+    bottom: -6px;
+    right: -6px;
+    background: var(--amber);
+    color: var(--night);
+    font-family: 'Bebas Neue';
+    font-size: 14px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--night);
+  }
+
+  .profile-info { flex: 1; min-width: 180px; }
+
+  .profile-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--snow);
+  }
+
+  .profile-title {
+    font-size: 11px;
+    color: var(--amber);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  .xp-bar-wrap {
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .xp-label {
+    font-size: 10px;
+    color: var(--granite);
+    letter-spacing: 2px;
+    margin-bottom: 4px;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .xp-bar {
+    height: 10px;
+    background: var(--forest);
+    border-radius: 2px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .xp-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--xp-blue), #82c4ff);
+    border-radius: 2px;
+    transition: width 0.6s ease;
+    position: relative;
+  }
+
+  .xp-fill::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: white;
+    opacity: 0.6;
+    animation: shimmer 1.5s infinite;
+  }
+
+  @keyframes shimmer {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 0.8; }
+  }
+
+  .stats-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .stat-chip {
+    background: var(--forest);
+    border: 1px solid var(--moss);
+    border-radius: 3px;
+    padding: 4px 10px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .stat-chip .icon { font-size: 14px; }
+  .stat-chip .val { color: var(--amber); font-weight: 600; }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 2px solid var(--forest);
+    margin-bottom: 24px;
+    overflow-x: auto;
+  }
+
+  .tab {
+    font-family: 'Bebas Neue';
+    font-size: 18px;
+    letter-spacing: 2px;
+    padding: 10px 22px;
+    cursor: pointer;
+    color: var(--granite);
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    transition: all 0.2s;
+    white-space: nowrap;
+    background: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+  }
+
+  .tab:hover { color: var(--frost); }
+  .tab.active { color: var(--amber); border-bottom-color: var(--amber); }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* Activity grid */
+  .section-title {
+    font-family: 'Bebas Neue';
+    font-size: 28px;
+    letter-spacing: 3px;
+    color: var(--frost);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--forest), transparent);
+  }
+
+  .activity-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+
+  .activity-card {
+    background: var(--night);
+    border: 1px solid var(--forest);
+    border-radius: 4px;
+    padding: 18px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .activity-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--moss);
+    transition: background 0.2s;
+  }
+
+  .activity-card:hover {
+    border-color: var(--lichen);
+    transform: translateY(-2px);
+  }
+
+  .activity-card:hover::before { background: var(--amber); }
+  .activity-card.locked { opacity: 0.5; cursor: not-allowed; }
+  .activity-card.locked:hover { transform: none; }
+
+  .activity-icon { font-size: 32px; margin-bottom: 8px; }
+
+  .activity-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .activity-desc {
+    font-size: 11px;
+    color: var(--granite);
+    line-height: 1.5;
+    margin-bottom: 12px;
+  }
+
+  .activity-rewards {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .reward-badge {
+    background: var(--forest);
+    border-radius: 3px;
+    padding: 3px 8px;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .reward-badge.xp { color: var(--xp-blue); }
+  .reward-badge.kr { color: var(--amber); }
+  .reward-badge.trophy { color: var(--gold); }
+
+  .activity-cooldown {
+    font-size: 10px;
+    color: var(--ember);
+    margin-top: 8px;
+    letter-spacing: 1px;
+  }
+
+  .do-btn {
+    width: 100%;
+    margin-top: 12px;
+    padding: 10px;
+    background: var(--moss);
+    border: none;
+    border-radius: 3px;
+    color: var(--snow);
+    font-family: 'Bebas Neue';
+    font-size: 16px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .do-btn:hover { background: var(--lichen); }
+  .do-btn:disabled { background: var(--forest); color: var(--granite); cursor: not-allowed; }
+
+  /* Upgrades */
+  .upgrade-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 12px;
+  }
+
+  .upgrade-card {
+    background: var(--night);
+    border: 1px solid var(--forest);
+    border-radius: 4px;
+    padding: 18px;
+    position: relative;
+  }
+
+  .upgrade-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+  }
+
+  .upgrade-icon { font-size: 28px; }
+
+  .upgrade-level-badge {
+    font-family: 'Bebas Neue';
+    font-size: 14px;
+    background: var(--forest);
+    padding: 2px 8px;
+    border-radius: 2px;
+    color: var(--amber);
+    letter-spacing: 1px;
+  }
+
+  .upgrade-name {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    margin-bottom: 4px;
+  }
+
+  .upgrade-desc { font-size: 11px; color: var(--granite); margin-bottom: 12px; line-height: 1.5; }
+
+  .upgrade-progress {
+    height: 6px;
+    background: var(--forest);
+    border-radius: 2px;
+    margin-bottom: 10px;
+  }
+
+  .upgrade-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--amber), var(--gold));
+    border-radius: 2px;
+    transition: width 0.4s;
+  }
+
+  .upgrade-btn {
+    width: 100%;
+    padding: 10px;
+    background: transparent;
+    border: 1px solid var(--amber);
+    border-radius: 3px;
+    color: var(--amber);
+    font-family: 'Bebas Neue';
+    font-size: 16px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .upgrade-btn:hover { background: var(--amber); color: var(--night); }
+  .upgrade-btn:disabled { border-color: var(--forest); color: var(--granite); cursor: not-allowed; }
+  .upgrade-btn:disabled:hover { background: transparent; color: var(--granite); }
+
+  /* Trophies */
+  .trophy-shelf {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+  }
+
+  .trophy-item {
+    background: var(--night);
+    border: 1px solid var(--forest);
+    border-radius: 4px;
+    padding: 20px 12px;
+    text-align: center;
+    position: relative;
+    transition: all 0.3s;
+  }
+
+  .trophy-item.earned {
+    border-color: var(--gold);
+    background: linear-gradient(135deg, var(--night), #1a160a);
+    box-shadow: 0 0 20px rgba(245, 200, 66, 0.08);
+  }
+
+  .trophy-item.earned:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(245, 200, 66, 0.15); }
+
+  .trophy-emoji {
+    font-size: 40px;
+    margin-bottom: 8px;
+    filter: grayscale(1) brightness(0.4);
+    transition: filter 0.3s;
+  }
+
+  .trophy-item.earned .trophy-emoji { filter: none; }
+
+  .trophy-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--granite);
+    line-height: 1.3;
+    margin-bottom: 4px;
+  }
+
+  .trophy-item.earned .trophy-name { color: var(--gold); }
+
+  .trophy-desc { font-size: 10px; color: var(--granite); line-height: 1.4; }
+
+  .trophy-rarity {
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-top: 6px;
+    padding: 2px 6px;
+    border-radius: 2px;
+    display: inline-block;
+  }
+
+  .rarity-common { color: var(--granite); background: rgba(138,154,138,0.15); }
+  .rarity-rare { color: var(--xp-blue); background: rgba(74,158,255,0.1); }
+  .rarity-epic { color: #c07aff; background: rgba(192,122,255,0.1); }
+  .rarity-legendary { color: var(--gold); background: rgba(245,200,66,0.1); }
+
+  .earned-date { font-size: 9px; color: var(--moss); margin-top: 4px; }
+
+  /* Log */
+  .activity-log {
+    background: var(--night);
+    border: 1px solid var(--forest);
+    border-radius: 4px;
+    padding: 16px;
+    max-height: 320px;
+    overflow-y: auto;
+  }
+
+  .log-entry {
+    padding: 8px 0;
+    border-bottom: 1px solid var(--forest);
+    font-size: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    animation: fadeSlide 0.3s ease;
+  }
+
+  @keyframes fadeSlide {
+    from { opacity: 0; transform: translateX(-8px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .log-entry:last-child { border-bottom: none; }
+
+  .log-msg { color: var(--frost); line-height: 1.4; }
+  .log-time { color: var(--granite); font-size: 10px; flex-shrink: 0; }
+
+  .log-xp { color: var(--xp-blue); font-size: 11px; }
+
+  /* Toast */
+  #toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .toast {
+    background: var(--night);
+    border: 1px solid var(--forest);
+    border-radius: 4px;
+    padding: 12px 18px;
+    font-size: 13px;
+    min-width: 260px;
+    animation: toastIn 0.3s ease;
+    border-left: 4px solid var(--amber);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+  }
+
+  .toast.trophy-toast { border-left-color: var(--gold); }
+  .toast.levelup-toast { border-left-color: var(--xp-blue); }
+  .toast.success-toast { border-left-color: var(--lichen); }
+
+  @keyframes toastIn {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .toast-title { font-family: 'Syne'; font-weight: 700; margin-bottom: 2px; }
+
+  /* Streak */
+  .streak-bar {
+    background: var(--night);
+    border: 1px solid var(--forest);
+    border-radius: 4px;
+    padding: 14px 20px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .streak-flame {
+    font-size: 36px;
+    animation: flamePulse 2s ease-in-out infinite;
+  }
+
+  @keyframes flamePulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+  }
+
+  .streak-info { flex: 1; }
+  .streak-num { font-family: 'Bebas Neue'; font-size: 36px; color: var(--ember); line-height: 1; }
+  .streak-label { font-size: 11px; color: var(--granite); letter-spacing: 2px; }
+
+  .streak-days { display: flex; gap: 6px; }
+  .streak-dot {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    border: 2px solid var(--forest);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px;
+    font-family: 'IBM Plex Mono';
+    color: var(--granite);
+  }
+  .streak-dot.done { background: var(--ember); border-color: var(--ember); color: var(--snow); }
+  .streak-dot.today { border-color: var(--amber); color: var(--amber); }
+
+  .prestige-btn {
+    display: block;
+    width: 100%;
+    padding: 16px;
+    margin-top: 32px;
+    background: linear-gradient(135deg, #1a0a00, #2a1500);
+    border: 1px solid var(--ember);
+    border-radius: 4px;
+    color: var(--ember);
+    font-family: 'Bebas Neue';
+    font-size: 22px;
+    letter-spacing: 4px;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-align: center;
+  }
+
+  .prestige-btn:hover { background: var(--ember); color: var(--snow); }
+
+  /* Name input */
+  .name-setup {
+    position: fixed;
+    inset: 0;
+    background: rgba(13,26,13,0.97);
+    z-index: 5000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .name-box {
+    max-width: 480px;
+    width: 100%;
+    text-align: center;
+  }
+
+  .name-box .logo { font-size: 72px; margin-bottom: 12px; }
+  .name-box p { color: var(--granite); margin-bottom: 32px; font-size: 13px; line-height: 1.6; }
+
+  .name-input {
+    width: 100%;
+    background: var(--night);
+    border: 1px solid var(--moss);
+    border-radius: 4px;
+    padding: 14px 18px;
+    color: var(--snow);
+    font-family: 'IBM Plex Mono';
+    font-size: 16px;
+    outline: none;
+    margin-bottom: 12px;
+    text-align: center;
+    letter-spacing: 2px;
+  }
+
+  .name-input:focus { border-color: var(--amber); }
+
+  .start-btn {
+    width: 100%;
+    padding: 14px;
+    background: var(--amber);
+    border: none;
+    border-radius: 4px;
+    color: var(--night);
+    font-family: 'Bebas Neue';
+    font-size: 24px;
+    letter-spacing: 4px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .start-btn:hover { background: var(--gold); }
+
+  /* Flex tag */
+  .flex-tag {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--gold), var(--amber));
+    color: var(--night);
+    font-family: 'Bebas Neue';
+    font-size: 13px;
+    letter-spacing: 2px;
+    padding: 3px 10px;
+    border-radius: 3px;
+    margin-left: 8px;
+  }
+
+  /* Progress section */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .big-stat {
+    background: var(--night);
+    border: 1px solid var(--forest);
+    border-radius: 4px;
+    padding: 18px;
+    text-align: center;
+  }
+
+  .big-stat-num { font-family: 'Bebas Neue'; font-size: 42px; color: var(--amber); line-height: 1; }
+  .big-stat-label { font-size: 10px; color: var(--granite); letter-spacing: 2px; text-transform: uppercase; margin-top: 4px; }
+
+  scrollbar-width: thin;
+  scrollbar-color: var(--forest) transparent;
+
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--forest); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<!-- Name setup overlay -->
+<div class="name-setup" id="nameSetup">
+  <div class="name-box">
+    <div class="logo">TUR<span>GLEDER</span></div>
+    <p>Det ultimate friluftsspillet.<br>Gå turer. Gjør aktiviteter. Tjen poeng.<br>Vis trofeer. Bli en legende.</p>
+    <input class="name-input" id="nameInput" placeholder="Hva heter du?" maxlength="20">
+    <button class="start-btn" onclick="startGame()">START GRINDEN 🏔️</button>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<div class="container">
+  <header>
+    <div class="logo">TUR<span>GLEDER</span></div>
+    <div class="tagline">Norges hardeste friluftsspill</div>
+  </header>
+
+  <div class="profile-bar">
+    <div class="avatar" id="avatarEl" data-level="1">🧍</div>
+    <div class="profile-info">
+      <div class="profile-name" id="profileName">—</div>
+      <div class="profile-title" id="profileTitle">Sofapotet</div>
+    </div>
+    <div class="xp-bar-wrap">
+      <div class="xp-label">
+        <span>ERFARING</span>
+        <span id="xpLabel">0 / 100 XP</span>
+      </div>
+      <div class="xp-bar"><div class="xp-fill" id="xpFill" style="width:0%"></div></div>
+    </div>
+    <div class="stats-row">
+      <div class="stat-chip"><span class="icon">💰</span><span class="val" id="krDisplay">0</span><span>kr</span></div>
+      <div class="stat-chip"><span class="icon">🔥</span><span class="val" id="streakDisplay">0</span><span>dager</span></div>
+      <div class="stat-chip"><span class="icon">🏆</span><span class="val" id="trophyCount">0</span></div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('aktiviteter')">Aktiviteter</button>
+    <button class="tab" onclick="showTab('oppgraderinger')">Oppgraderinger</button>
+    <button class="tab" onclick="showTab('trofeer')">Trofeer</button>
+    <button class="tab" onclick="showTab('statistikk')">Statistikk</button>
+    <button class="tab" onclick="showTab('logg')">Logg</button>
+  </div>
+
+  <!-- AKTIVITETER -->
+  <div class="tab-content active" id="tab-aktiviteter">
+    <div class="streak-bar">
+      <div class="streak-flame">🔥</div>
+      <div class="streak-info">
+        <div class="streak-num" id="streakNum">0</div>
+        <div class="streak-label">DAGERSREKKE</div>
+      </div>
+      <div class="streak-days" id="streakDots"></div>
+    </div>
+
+    <div class="section-title">Daglige aktiviteter</div>
+    <div class="activity-grid" id="activityGrid"></div>
+
+    <div class="section-title">Ukentlige utfordringer</div>
+    <div class="activity-grid" id="weeklyGrid"></div>
+  </div>
+
+  <!-- OPPGRADERINGER -->
+  <div class="tab-content" id="tab-oppgraderinger">
+    <div class="section-title">Oppgraderinger</div>
+    <div class="upgrade-grid" id="upgradeGrid"></div>
+  </div>
+
+  <!-- TROFEER -->
+  <div class="tab-content" id="tab-trofeer">
+    <div class="section-title">Troféhylle <span class="flex-tag" id="trophyFlex">0 TROFEER</span></div>
+    <p style="font-size:12px;color:var(--granite);margin-bottom:20px;">Trofeer = flex. Lås dem opp ved å grinde aktiviteter.</p>
+    <div class="trophy-shelf" id="trophyShelf"></div>
+  </div>
+
+  <!-- STATISTIKK -->
+  <div class="tab-content" id="tab-statistikk">
+    <div class="section-title">Din statistikk</div>
+    <div class="stat-grid" id="statGrid"></div>
+
+    <div class="section-title">Titler</div>
+    <div id="titlesDisplay" style="font-size:12px;color:var(--granite);line-height:2;"></div>
+
+    <button class="prestige-btn" id="prestigeBtn" onclick="prestige()">⚠️ PRESTIGE — RESET ALT FOR EVIG HEDER ⚠️</button>
+  </div>
+
+  <!-- LOGG -->
+  <div class="tab-content" id="tab-logg">
+    <div class="section-title">Aktivitetslogg</div>
+    <div class="activity-log" id="logContainer">
+      <div style="color:var(--granite);font-size:12px;text-align:center;padding:24px;">Ingen aktiviteter ennå. Gå en tur!</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ================== DATA ==================
+const ACTIVITIES = [
+  {
+    id: 'kort_tur', name: 'Kort spasertur', icon: '🚶', desc: 'En rask tur rundt blokka. Bedre enn ingenting.',
+    xp: 15, kr: 5, cooldown: 1800, type: 'daily',
+    reqs: {}, trophyXP: 0
+  },
+  {
+    id: 'joggetur', name: 'Joggetur', icon: '🏃', desc: '5 km rolig jogging i frisk luft.',
+    xp: 40, kr: 15, cooldown: 3600, type: 'daily',
+    reqs: { level: 2 }, trophyXP: 0
+  },
+  {
+    id: 'fjelltur', name: 'Fjelltur', icon: '⛰️', desc: 'En hel dag på fjellet. Krever forberedelse.',
+    xp: 120, kr: 40, cooldown: 14400, type: 'daily',
+    reqs: { level: 4 }, trophyXP: 0
+  },
+  {
+    id: 'sykling', name: 'Sykkeltur', icon: '🚴', desc: 'Rundt 15 km på sykkelen.',
+    xp: 55, kr: 20, cooldown: 5400, type: 'daily',
+    reqs: { level: 3 }, trophyXP: 0
+  },
+  {
+    id: 'bading', name: 'Friluftsbading', icon: '🏊', desc: 'Hopp i havet eller vannet. Brrr!',
+    xp: 70, kr: 25, cooldown: 7200, type: 'daily',
+    reqs: { level: 5 }, trophyXP: 0
+  },
+  {
+    id: 'ski', name: 'Skitur', icon: '⛷️', desc: 'Langrenn eller slalom. Skikkelig norsk.',
+    xp: 100, kr: 35, cooldown: 10800, type: 'daily',
+    reqs: { level: 6 }, trophyXP: 0
+  },
+  {
+    id: 'klatring', name: 'Klatring', icon: '🧗', desc: 'Enten innendørs eller på berg.',
+    xp: 90, kr: 30, cooldown: 9000, type: 'daily',
+    reqs: { level: 7 }, trophyXP: 0
+  },
+  {
+    id: 'kajak', name: 'Kajakk', icon: '🛶', desc: 'Padling langs kysten. Krever balanse.',
+    xp: 110, kr: 38, cooldown: 10800, type: 'daily',
+    reqs: { level: 9 }, trophyXP: 0
+  },
+  {
+    id: 'ultra', name: 'Ultraløp', icon: '🏅', desc: 'Mer enn 42 km. For de virkelig gale.',
+    xp: 500, kr: 200, cooldown: 86400, type: 'daily',
+    reqs: { level: 15 }, trophyXP: 0
+  },
+];
+
+const WEEKLIES = [
+  {
+    id: 'week_5dag', name: '5-dagers utfordring', icon: '📅', desc: 'Gjør 5 aktiviteter denne uken.',
+    xp: 200, kr: 80, cooldown: 604800, type: 'weekly',
+    reqs: { activitiesThisWeek: 5 }, trophyXP: 0
+  },
+  {
+    id: 'week_streak7', name: 'En uke streak', icon: '🔥', desc: 'Hold en 7-dagersrekke aktiv.',
+    xp: 350, kr: 120, cooldown: 604800, type: 'weekly',
+    reqs: { streak: 7 }, trophyXP: 0
+  },
+  {
+    id: 'week_fjell3', name: 'Fjellkongen', icon: '👑', desc: 'Gjennomfør 3 fjellture denne uken.',
+    xp: 400, kr: 150, cooldown: 604800, type: 'weekly',
+    reqs: { activityCount: { id: 'fjelltur', count: 3 }, level: 4 }, trophyXP: 0
+  },
+];
+
+const UPGRADES = [
+  { id: 'boots', name: 'Tursko', icon: '👟', desc: '+20% XP fra alle turer. Skikkelig kvalitet.', maxLevel: 5, baseCost: 30, costMult: 2, effect: 'xpBonus', effectVal: 0.2 },
+  { id: 'backpack', name: 'Ryggsekk', icon: '🎒', desc: '+15% kr fra aktiviteter. Mer plass = mer stamina.', maxLevel: 5, baseCost: 45, costMult: 2.2, effect: 'krBonus', effectVal: 0.15 },
+  { id: 'water', name: 'Termosflaske', icon: '🧃', desc: 'Reduser cooldown med 10% per nivå.', maxLevel: 5, baseCost: 40, costMult: 1.8, effect: 'cooldownReduce', effectVal: 0.1 },
+  { id: 'map', name: 'Turkart', icon: '🗺️', desc: '+25% XP fra fjellturer og ukentlige utfordringer.', maxLevel: 4, baseCost: 80, costMult: 2.5, effect: 'mountainBonus', effectVal: 0.25 },
+  { id: 'tent', name: 'Telt', icon: '⛺', desc: 'Lås opp bonus-aktiviteten "Overnattingstur".', maxLevel: 1, baseCost: 200, costMult: 1, effect: 'unlock', effectVal: 'overnatting' },
+  { id: 'kayak_up', name: 'Kajakk-utstyr', icon: '🚣', desc: '+30% XP fra kajakk og bading.', maxLevel: 3, baseCost: 120, costMult: 3, effect: 'waterBonus', effectVal: 0.3 },
+  { id: 'headlamp', name: 'Hodelykt', icon: '🔦', desc: 'Dobler XP fra nattaktiviteter. Avansert.', maxLevel: 2, baseCost: 160, costMult: 4, effect: 'nightBonus', effectVal: 1.0 },
+  { id: 'gps', name: 'GPS-klokke', icon: '⌚', desc: '+50% kr fra alle aktiviteter. Dyrt men verdt det.', maxLevel: 3, baseCost: 300, costMult: 3.5, effect: 'krBonus2', effectVal: 0.5 },
+];
+
+const TROPHIES = [
+  { id: 't_first', name: 'Første steg', icon: '👣', desc: 'Gjennomfør din aller første aktivitet.', rarity: 'common', req: { totalActivities: 1 } },
+  { id: 't_10act', name: 'Rutine', icon: '📋', desc: 'Gjennomfør 10 aktiviteter totalt.', rarity: 'common', req: { totalActivities: 10 } },
+  { id: 't_50act', name: 'Dedikert', icon: '💪', desc: '50 gjennomførte aktiviteter.', rarity: 'rare', req: { totalActivities: 50 } },
+  { id: 't_100act', name: 'Hundredmann', icon: '💯', desc: '100 aktiviteter! Du er en maskin.', rarity: 'epic', req: { totalActivities: 100 } },
+  { id: 't_500act', name: 'Friluftsgud', icon: '🌟', desc: '500 aktiviteter. Absurd dedikert.', rarity: 'legendary', req: { totalActivities: 500 } },
+  { id: 't_streak3', name: '3-dagersrekke', icon: '🔥', desc: 'Hold en rekke i 3 dager.', rarity: 'common', req: { maxStreak: 3 } },
+  { id: 't_streak7', name: 'Ukekriger', icon: '⚔️', desc: '7 dager på rad!', rarity: 'rare', req: { maxStreak: 7 } },
+  { id: 't_streak30', name: 'Jernvilje', icon: '🧲', desc: '30 dager i strekk. Imponerende.', rarity: 'epic', req: { maxStreak: 30 } },
+  { id: 't_streak100', name: '100 dager', icon: '👑', desc: '100-dagersrekke. Du er ikke menneske.', rarity: 'legendary', req: { maxStreak: 100 } },
+  { id: 't_fjell5', name: 'Fjellvandrer', icon: '⛰️', desc: 'Gjennomfør 5 fjellturer.', rarity: 'rare', req: { activityCount: { id: 'fjelltur', count: 5 } } },
+  { id: 't_fjell20', name: 'Fjellkonge', icon: '🏔️', desc: '20 fjellturer. Terrenget er ditt hjem.', rarity: 'epic', req: { activityCount: { id: 'fjelltur', count: 20 } } },
+  { id: 't_ultra', name: 'Ultra-løper', icon: '🏅', desc: 'Gjennomfør ditt første ultraløp.', rarity: 'epic', req: { activityCount: { id: 'ultra', count: 1 } } },
+  { id: 't_ultra5', name: 'Ultra-maskin', icon: '⚡', desc: '5 ultraløp. Sinnssykt.', rarity: 'legendary', req: { activityCount: { id: 'ultra', count: 5 } } },
+  { id: 't_level5', name: 'Nivå 5', icon: '🌱', desc: 'Nå nivå 5.', rarity: 'common', req: { level: 5 } },
+  { id: 't_level10', name: 'Nivå 10', icon: '🌿', desc: 'Nå nivå 10.', rarity: 'rare', req: { level: 10 } },
+  { id: 't_level20', name: 'Nivå 20', icon: '🌳', desc: 'Nå nivå 20.', rarity: 'epic', req: { level: 20 } },
+  { id: 't_level50', name: 'Legende', icon: '🦅', desc: 'Nå nivå 50. Absolutt absurd.', rarity: 'legendary', req: { level: 50 } },
+  { id: 't_maxupg', name: 'Fullt utstyrt', icon: '🎿', desc: 'Maks en oppgradering.', rarity: 'rare', req: { anyMaxUpgrade: true } },
+  { id: 't_rikman', name: 'Frisk luft-rik', icon: '💸', desc: 'Samle 5000 kr totalt.', rarity: 'epic', req: { totalKr: 5000 } },
+  { id: 't_prestige', name: 'Prestige!', icon: '🌅', desc: 'Gjennomfør prestige én gang.', rarity: 'legendary', req: { prestiges: 1 } },
+];
+
+const TITLES = [
+  { minLevel: 1, title: 'Sofapotet' },
+  { minLevel: 2, title: 'Spaserende' },
+  { minLevel: 4, title: 'Turgåer' },
+  { minLevel: 6, title: 'Friluftsentusiast' },
+  { minLevel: 9, title: 'Naturkjenner' },
+  { minLevel: 12, title: 'Terrengløper' },
+  { minLevel: 16, title: 'Fjellvandrer' },
+  { minLevel: 21, title: 'Naturkriger' },
+  { minLevel: 28, title: 'Friluftsmester' },
+  { minLevel: 36, title: 'Turfantom' },
+  { minLevel: 45, title: 'Fjellkonge' },
+  { minLevel: 55, title: 'Ultramenneske' },
+  { minLevel: 70, title: 'Naturlegend' },
+  { minLevel: 99, title: '🇳🇴 ekte nordmann 🇳🇴' },
+];
+
+const AVATARS = ['🧍','🚶','🏃','⛷️','🧗','🚴','🏊','🏅','👑','🦅'];
+
+// ================== STATE ==================
+let state = {
+  name: '', level: 1, xp: 0, kr: 0,
+  cooldowns: {}, trophies: [], upgradeLevels: {},
+  log: [], totalActivities: 0, activityCounts: {},
+  streak: 0, maxStreak: 0, lastActivityDate: null,
+  streakHistory: [],
+  activitiesThisWeek: 0,
+  totalKr: 0,
+  prestiges: 0,
+  weeklyResets: {},
+};
+
+function saveState() { localStorage.setItem('turgleder_v3', JSON.stringify(state)); }
+
+function loadState() {
+  const s = localStorage.getItem('turgleder_v3');
+  if (s) {
+    state = { ...state, ...JSON.parse(s) };
+    return true;
+  }
+  return false;
+}
+
+// ================== INIT ==================
+window.onload = () => {
+  if (loadState() && state.name) {
+    document.getElementById('nameSetup').style.display = 'none';
+    init();
+  }
+};
+
+function startGame() {
+  const n = document.getElementById('nameInput').value.trim();
+  if (!n) { alert('Skriv inn et navn!'); return; }
+  state.name = n;
+  saveState();
+  document.getElementById('nameSetup').style.display = 'none';
+  init();
+}
+
+function init() {
+  renderProfile();
+  renderActivities();
+  renderUpgrades();
+  renderTrophies();
+  renderStats();
+  renderLog();
+  renderStreak();
+}
+
+// ================== XP / LEVEL ==================
+function xpForLevel(lvl) { return Math.floor(100 * Math.pow(lvl, 1.6)); }
+
+function addXP(amount) {
+  const bonus = getUpgradeBonus('xpBonus') + getUpgradeBonus('xpBonus2');
+  amount = Math.floor(amount * (1 + bonus));
+  state.xp += amount;
+  let leveled = false;
+  while (state.xp >= xpForLevel(state.level)) {
+    state.xp -= xpForLevel(state.level);
+    state.level++;
+    leveled = true;
+  }
+  if (leveled) {
+    toast(`🎉 Nivå opp! Du er nå nivå ${state.level}!`, 'levelup');
+    checkTrophies();
+  }
+  return amount;
+}
+
+function getUpgradeBonus(effect) {
+  let total = 0;
+  UPGRADES.forEach(u => {
+    if (u.effect === effect) {
+      const lvl = state.upgradeLevels[u.id] || 0;
+      total += u.effectVal * lvl;
+    }
+  });
+  return total;
+}
+
+function getCooldownMultiplier() {
+  return Math.max(0.2, 1 - getUpgradeBonus('cooldownReduce'));
+}
+
+// ================== ACTIVITIES ==================
+function canDoActivity(act) {
+  const now = Date.now();
+  const cd = state.cooldowns[act.id] || 0;
+  const cdMs = act.cooldown * 1000 * getCooldownMultiplier();
+  if (now - cd < cdMs) return false;
+  if (act.reqs.level && state.level < act.reqs.level) return false;
+  return true;
+}
+
+function cdRemaining(act) {
+  const now = Date.now();
+  const cd = state.cooldowns[act.id] || 0;
+  const cdMs = act.cooldown * 1000 * getCooldownMultiplier();
+  const rem = cdMs - (now - cd);
+  if (rem <= 0) return null;
+  return rem;
+}
+
+function formatTime(ms) {
+  const s = Math.floor(ms / 1000);
+  if (s < 60) return `${s}s`;
+  if (s < 3600) return `${Math.floor(s/60)}m ${s%60}s`;
+  return `${Math.floor(s/3600)}t ${Math.floor((s%3600)/60)}m`;
+}
+
+function doActivity(actId) {
+  const act = [...ACTIVITIES, ...WEEKLIES].find(a => a.id === actId);
+  if (!act) return;
+
+  // Check weekly reqs
+  if (act.reqs.activitiesThisWeek && state.activitiesThisWeek < act.reqs.activitiesThisWeek) {
+    toast(`Krav: ${act.reqs.activitiesThisWeek} aktiviteter denne uken. Du har ${state.activitiesThisWeek}.`);
+    return;
+  }
+  if (act.reqs.streak && state.streak < act.reqs.streak) {
+    toast(`Krav: ${act.reqs.streak} dagers rekke. Du har ${state.streak}.`);
+    return;
+  }
+  if (act.reqs.activityCount) {
+    const cnt = state.activityCounts[act.reqs.activityCount.id] || 0;
+    if (cnt < act.reqs.activityCount.count) {
+      toast(`Krav: ${act.reqs.activityCount.count}x ${act.reqs.activityCount.id}. Du har ${cnt}.`);
+      return;
+    }
+  }
+  if (!canDoActivity(act)) return;
+
+  state.cooldowns[act.id] = Date.now();
+  state.totalActivities++;
+  state.activityCounts[act.id] = (state.activityCounts[act.id] || 0) + 1;
+  state.activitiesThisWeek = (state.activitiesThisWeek || 0) + 1;
+
+  // Streak
+  updateStreak();
+
+  let kr = act.kr;
+  const krBonus = getUpgradeBonus('krBonus') + getUpgradeBonus('krBonus2');
+  kr = Math.floor(kr * (1 + krBonus));
+
+  let xpEarned = act.xp;
+  // Mountain bonus
+  if (act.id === 'fjelltur' || act.type === 'weekly') xpEarned = Math.floor(xpEarned * (1 + getUpgradeBonus('mountainBonus')));
+  if (act.id === 'kajak' || act.id === 'bading') xpEarned = Math.floor(xpEarned * (1 + getUpgradeBonus('waterBonus')));
+
+  const actualXP = addXP(xpEarned);
+  state.kr += kr;
+  state.totalKr = (state.totalKr || 0) + kr;
+
+  const msg = `${act.icon} ${act.name} — +${actualXP} XP, +${kr} kr`;
+  addLog(msg, actualXP);
+  toast(msg, 'success');
+
+  checkTrophies();
+  saveState();
+  init();
+
+  // Cooldown tick
+  startCooldownTimer();
+}
+
+function updateStreak() {
+  const today = new Date().toDateString();
+  if (state.lastActivityDate === today) return;
+  const yesterday = new Date(Date.now() - 86400000).toDateString();
+  if (state.lastActivityDate === yesterday) {
+    state.streak++;
+  } else if (state.lastActivityDate !== today) {
+    state.streak = 1;
+  }
+  state.maxStreak = Math.max(state.maxStreak, state.streak);
+  state.lastActivityDate = today;
+
+  // Update history
+  if (!state.streakHistory) state.streakHistory = [];
+  state.streakHistory.push(today);
+  if (state.streakHistory.length > 7) state.streakHistory = state.streakHistory.slice(-7);
+}
+
+let cdInterval = null;
+function startCooldownTimer() {
+  if (cdInterval) clearInterval(cdInterval);
+  cdInterval = setInterval(() => {
+    renderActivities();
+  }, 1000);
+}
+
+// ================== UPGRADES ==================
+function upgradeCost(upg) {
+  const lvl = state.upgradeLevels[upg.id] || 0;
+  return Math.floor(upg.baseCost * Math.pow(upg.costMult, lvl));
+}
+
+function buyUpgrade(upgId) {
+  const upg = UPGRADES.find(u => u.id === upgId);
+  const lvl = state.upgradeLevels[upgId] || 0;
+  if (lvl >= upg.maxLevel) { toast('Allerede maks nivå!'); return; }
+  const cost = upgradeCost(upg);
+  if (state.kr < cost) { toast(`Ikke nok kr! Trenger ${cost} kr.`); return; }
+  state.kr -= cost;
+  state.upgradeLevels[upgId] = lvl + 1;
+  toast(`✅ ${upg.icon} ${upg.name} oppgradert til nivå ${lvl + 1}!`, 'success');
+  checkTrophies();
+  saveState();
+  init();
+}
+
+// ================== TROPHIES ==================
+function checkTrophies() {
+  TROPHIES.forEach(t => {
+    if (state.trophies.includes(t.id)) return;
+    let earned = false;
+    const r = t.req;
+    if (r.totalActivities && state.totalActivities >= r.totalActivities) earned = true;
+    if (r.maxStreak && state.maxStreak >= r.maxStreak) earned = true;
+    if (r.level && state.level >= r.level) earned = true;
+    if (r.activityCount && (state.activityCounts[r.activityCount.id] || 0) >= r.activityCount.count) earned = true;
+    if (r.anyMaxUpgrade) {
+      UPGRADES.forEach(u => { if ((state.upgradeLevels[u.id] || 0) >= u.maxLevel) earned = true; });
+    }
+    if (r.totalKr && (state.totalKr || 0) >= r.totalKr) earned = true;
+    if (r.prestiges && (state.prestiges || 0) >= r.prestiges) earned = true;
+
+    if (earned) {
+      state.trophies.push(t.id);
+      setTimeout(() => {
+        toast(`🏆 NYTT TROFÉ: ${t.icon} ${t.name}!`, 'trophy');
+      }, 300);
+    }
+  });
+}
+
+// ================== PRESTIGE ==================
+function prestige() {
+  if (state.level < 20) { toast('Du må være minst nivå 20 for å prestisje!'); return; }
+  if (!confirm('⚠️ Prestige: Alt resettes (XP, kr, cooldowns, oppgraderinger), men du beholder trofeer og en stjerne på profilen. Sikker?')) return;
+  state.prestiges = (state.prestiges || 0) + 1;
+  state.level = 1; state.xp = 0; state.kr = 0;
+  state.cooldowns = {}; state.upgradeLevels = {};
+  state.totalActivities = 0; state.activityCounts = {};
+  state.activitiesThisWeek = 0; state.totalKr = 0;
+  checkTrophies();
+  saveState();
+  toast(`🌅 PRESTIGE ${state.prestiges}! Rekken starter på nytt, men legendestatus beholdes.`, 'trophy');
+  init();
+}
+
+// ================== RENDER ==================
+function getTitle(lvl) {
+  let t = TITLES[0].title;
+  TITLES.forEach(e => { if (lvl >= e.minLevel) t = e.title; });
+  return t;
+}
+
+function renderProfile() {
+  document.getElementById('profileName').textContent = state.name + (state.prestiges > 0 ? ' ⭐'.repeat(Math.min(state.prestiges, 5)) : '');
+  document.getElementById('profileTitle').textContent = getTitle(state.level);
+  document.getElementById('krDisplay').textContent = state.kr;
+  document.getElementById('streakDisplay').textContent = state.streak;
+  document.getElementById('trophyCount').textContent = state.trophies.length;
+  document.getElementById('trophyFlex').textContent = `${state.trophies.length} TROFEER`;
+
+  const xpNeeded = xpForLevel(state.level);
+  const pct = Math.min(100, (state.xp / xpNeeded) * 100);
+  document.getElementById('xpFill').style.width = pct + '%';
+  document.getElementById('xpLabel').textContent = `${state.xp} / ${xpNeeded} XP`;
+
+  const avatarIdx = Math.min(AVATARS.length - 1, Math.floor(state.level / 10));
+  const avatarEl = document.getElementById('avatarEl');
+  avatarEl.textContent = AVATARS[avatarIdx];
+  avatarEl.dataset.level = state.level;
+}
+
+function renderActivities() {
+  renderActivityList(ACTIVITIES, 'activityGrid', false);
+  renderActivityList(WEEKLIES, 'weeklyGrid', true);
+}
+
+function renderActivityList(acts, gridId, isWeekly) {
+  const grid = document.getElementById(gridId);
+  grid.innerHTML = '';
+  acts.forEach(act => {
+    const locked = act.reqs.level && state.level < act.reqs.level;
+    const rem = cdRemaining(act);
+    const onCooldown = rem !== null;
+    const card = document.createElement('div');
+    card.className = 'activity-card' + (locked ? ' locked' : '');
+
+    let rewardHtml = `<span class="reward-badge xp">⚡ ${act.xp} XP</span><span class="reward-badge kr">💰 ${act.kr} kr</span>`;
+
+    let cdHtml = '';
+    if (onCooldown) cdHtml = `<div class="activity-cooldown" id="cd-${act.id}">⏳ ${formatTime(rem)}</div>`;
+
+    let lockMsg = '';
+    if (locked) lockMsg = `<div class="activity-cooldown">🔒 Krever nivå ${act.reqs.level}</div>`;
+
+    card.innerHTML = `
+      <div class="activity-icon">${act.icon}</div>
+      <div class="activity-name">${act.name}</div>
+      <div class="activity-desc">${act.desc}</div>
+      <div class="activity-rewards">${rewardHtml}</div>
+      ${cdHtml}${lockMsg}
+      <button class="do-btn" onclick="doActivity('${act.id}')" ${locked || onCooldown ? 'disabled' : ''}>
+        ${onCooldown ? 'PÅ COOLDOWN' : (locked ? 'LÅST' : 'GJENNOMFØR')}
+      </button>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function renderUpgrades() {
+  const grid = document.getElementById('upgradeGrid');
+  grid.innerHTML = '';
+  UPGRADES.forEach(upg => {
+    const lvl = state.upgradeLevels[upg.id] || 0;
+    const maxed = lvl >= upg.maxLevel;
+    const cost = upgradeCost(upg);
+    const pct = (lvl / upg.maxLevel) * 100;
+
+    const card = document.createElement('div');
+    card.className = 'upgrade-card';
+    card.innerHTML = `
+      <div class="upgrade-header">
+        <span class="upgrade-icon">${upg.icon}</span>
+        <span class="upgrade-level-badge">Niv. ${lvl}/${upg.maxLevel}</span>
+      </div>
+      <div class="upgrade-name">${upg.name}</div>
+      <div class="upgrade-desc">${upg.desc}</div>
+      <div class="upgrade-progress"><div class="upgrade-fill" style="width:${pct}%"></div></div>
+      <button class="upgrade-btn" onclick="buyUpgrade('${upg.id}')" ${maxed || state.kr < cost ? 'disabled' : ''}>
+        ${maxed ? 'MAKSIMUM' : `KJØP — ${cost} kr`}
+      </button>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function renderTrophies() {
+  const shelf = document.getElementById('trophyShelf');
+  shelf.innerHTML = '';
+  TROPHIES.forEach(t => {
+    const earned = state.trophies.includes(t.id);
+    const div = document.createElement('div');
+    div.className = 'trophy-item' + (earned ? ' earned' : '');
+    div.innerHTML = `
+      <div class="trophy-emoji">${t.icon}</div>
+      <div class="trophy-name">${t.name}</div>
+      <div class="trophy-desc">${t.desc}</div>
+      <span class="trophy-rarity rarity-${t.rarity}">${t.rarity.toUpperCase()}</span>
+    `;
+    shelf.appendChild(div);
+  });
+}
+
+function renderStats() {
+  const grid = document.getElementById('statGrid');
+  grid.innerHTML = '';
+  const stats = [
+    { num: state.level, label: 'Nivå' },
+    { num: state.totalActivities || 0, label: 'Aktiviteter' },
+    { num: state.maxStreak || 0, label: 'Maks rekke' },
+    { num: state.trophies.length, label: 'Trofeer' },
+    { num: state.totalKr || 0, label: 'Total kr' },
+    { num: state.prestiges || 0, label: 'Prestisjer' },
+    { num: state.activityCounts['fjelltur'] || 0, label: 'Fjellturer' },
+    { num: state.activityCounts['ultra'] || 0, label: 'Ultraløp' },
+  ];
+  stats.forEach(s => {
+    const d = document.createElement('div');
+    d.className = 'big-stat';
+    d.innerHTML = `<div class="big-stat-num">${s.num}</div><div class="big-stat-label">${s.label}</div>`;
+    grid.appendChild(d);
+  });
+
+  const titlesDiv = document.getElementById('titlesDisplay');
+  const earnedTitles = TITLES.filter(t => state.level >= t.minLevel).map(t => `✅ ${t.title} <span style="color:var(--forest)">(Niv. ${t.minLevel}+)</span>`);
+  const notYet = TITLES.filter(t => state.level < t.minLevel).map(t => `🔒 ${t.title} <span style="color:var(--forest)">(Niv. ${t.minLevel}+)</span>`);
+  titlesDiv.innerHTML = [...earnedTitles, ...notYet].join('<br>');
+
+  const prestigeBtn = document.getElementById('prestigeBtn');
+  prestigeBtn.disabled = state.level < 20;
+  if (state.level < 20) prestigeBtn.textContent = `⚠️ PRESTIGE — TRENGER NIVÅ 20 (du er ${state.level}) ⚠️`;
+  else prestigeBtn.textContent = `⚠️ PRESTIGE — RESET ALT FOR EVIG HEDER ⚠️`;
+}
+
+function renderLog() {
+  const container = document.getElementById('logContainer');
+  if (!state.log || state.log.length === 0) {
+    container.innerHTML = '<div style="color:var(--granite);font-size:12px;text-align:center;padding:24px;">Ingen aktiviteter ennå. Gå en tur!</div>';
+    return;
+  }
+  container.innerHTML = state.log.slice().reverse().map(entry => `
+    <div class="log-entry">
+      <div>
+        <div class="log-msg">${entry.msg}</div>
+        <div class="log-xp">+${entry.xp} XP</div>
+      </div>
+      <div class="log-time">${entry.time}</div>
+    </div>
+  `).join('');
+}
+
+function renderStreak() {
+  document.getElementById('streakNum').textContent = state.streak;
+  document.getElementById('streakDisplay').textContent = state.streak;
+
+  const dotsEl = document.getElementById('streakDots');
+  dotsEl.innerHTML = '';
+  const today = new Date().toDateString();
+  const days = ['Man', 'Tir', 'Ons', 'Tor', 'Fre', 'Lør', 'Søn'];
+  const now = new Date();
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(now.getTime() - i * 86400000);
+    const dStr = d.toDateString();
+    const isToday = dStr === today;
+    const done = state.streakHistory && state.streakHistory.includes(dStr);
+    const dot = document.createElement('div');
+    dot.className = 'streak-dot' + (done ? ' done' : '') + (isToday && !done ? ' today' : '');
+    dot.textContent = days[d.getDay() === 0 ? 6 : d.getDay() - 1];
+    dotsEl.appendChild(dot);
+  }
+}
+
+// ================== TABS ==================
+function showTab(id) {
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    const tabs = ['aktiviteter','oppgraderinger','trofeer','statistikk','logg'];
+    t.classList.toggle('active', tabs[i] === id);
+  });
+  document.querySelectorAll('.tab-content').forEach(c => {
+    c.classList.toggle('active', c.id === 'tab-' + id);
+  });
+  if (id === 'statistikk') renderStats();
+}
+
+// ================== LOG ==================
+function addLog(msg, xp) {
+  if (!state.log) state.log = [];
+  const now = new Date();
+  state.log.push({
+    msg, xp,
+    time: now.toLocaleTimeString('no-NO', { hour: '2-digit', minute: '2-digit' })
+  });
+  if (state.log.length > 100) state.log = state.log.slice(-100);
+}
+
+// ================== TOAST ==================
+function toast(msg, type = '') {
+  const container = document.getElementById('toast-container');
+  const el = document.createElement('div');
+  el.className = `toast ${type ? type + '-toast' : ''}`;
+  el.innerHTML = `<div class="toast-title">${msg}</div>`;
+  container.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.5s'; setTimeout(() => el.remove(), 500); }, 3000);
+}
+
+// Cooldown live update
+startCooldownTimer();
+</script>
+</body>
+</html>
